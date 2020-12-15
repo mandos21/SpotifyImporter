@@ -9,12 +9,14 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from tinytag import TinyTag
 import threading
+import credentials
 
 class main_window:
 
     def __init__(self):
 
-        client_credentials_manager = SpotifyClientCredentials(client_id='',client_secret='')
+        self.get_credentials(self)
+        client_credentials_manager = SpotifyClientCredentials(credentials.client_id,credentials.client_secret)
         self.sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
         self.items_to_save = []
