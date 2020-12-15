@@ -237,8 +237,43 @@ class main_window:
     def review_screen(self):
         print(self.items_to_save)
         self.main_frame.destroy()
-        self.main_frame = tk.Frame(self.main_window)
-        self.main_frame.pack()
+
+        self.tree = ttk.Treeview(self.main_window)
+
+        self.tree["columns"] = ("Type", 'ID')
+        self.tree.column("Type",anchor='e',width=5)
+        self.tree.column("ID",anchor='e',width=15)
+
+        self.tree.heading("Type", text="Type")
+        self.tree.heading("ID", text="ID")
+
+        self.vsb = ttk.Scrollbar(self.tree,orient="vertical",command=self.tree.yview)
+        self.vsb.pack(anchor='e',fill='y',expand=True,side='right')
+        self.tree.configure(yscrollcommand=self.vsb.set)
+
+        self.tree.pack(expand=True, fill='both')
+
+        self.state = True
+
+        for item in self.items_to_save:
+            self.tree.insert('','end',item['album'],text=item['album'],values=['album',item['albumid']],open=True,tags=('unfinished','album'))
+            if item['artist']:
+                self.tree.insert(item['album'],'end',text=item['artist'],values=['artist',item['artistid']],open=True,tags=('artist','unfinished'))
+
+            if item['songs']:
+                for song in item['songs']:
+                    self.tree.insert(item['album'],'end',text=song['song'],values=['song',song['songid']],open=True,tags=(str(self.state),'unfinished'))
+                    self.state = not self.state
+                self.state = True
+
+
+        self.tree.tag_configure('True',background='slategray2')
+        self.tree.tag_configure('album',background='skyblue3')
+        self.tree.tag_configure('artist',background='skyblue2')
+        self.tree.tag_configure('False',background='slategray1')
+        self.tree.tag_configure('finished',background='green')
+
+
 
     def set_file_details(self,album_details):
         self.file_folder_contents.config(text=album_details[1])
