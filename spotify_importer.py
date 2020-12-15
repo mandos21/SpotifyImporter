@@ -15,7 +15,6 @@ class main_window:
 
     def __init__(self):
 
-        self.get_credentials(self)
         client_credentials_manager = SpotifyClientCredentials(credentials.client_id,credentials.client_secret)
         self.sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
