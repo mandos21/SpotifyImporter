@@ -6,17 +6,19 @@ import requests
 from io import BytesIO
 import os
 import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyOAuth
 from tinytag import TinyTag
 import threading
 import credentials
+import time
 
 class main_window:
 
     def __init__(self):
 
-        client_credentials_manager = SpotifyClientCredentials(credentials.client_id,credentials.client_secret)
-        self.sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+
+        scope = "user-library-modify user-follow-modify"
+        self.sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id=credentials.client_id,client_secret=credentials.client_secret,redirect_uri='http://127.0.0.1:9090',scope=scope))
 
         self.items_to_save = []
 
@@ -167,7 +169,7 @@ class main_window:
         self.album_select_frame.grid(row=4,column=0,columnspan=2,sticky=tk.N)
 
 
-        #self.load_folders("X:\\mandos\\Nextcloud\\Music\\")
+        #self.load_folders("D:\\Users\\Matt\\Documents\\Python Projects\\SpotifyImporter\\Example Directory (Small)")
         
 
        
@@ -238,6 +240,7 @@ class main_window:
         print(self.items_to_save)
         self.main_frame.destroy()
 
+        self.main_window.geometry('600x600')
         self.tree = ttk.Treeview(self.main_window)
 
         self.tree["columns"] = ("Type", 'ID')
@@ -255,24 +258,73 @@ class main_window:
 
         self.state = True
 
+        self.item_count = 0
+
         for item in self.items_to_save:
             self.tree.insert('','end',item['album'],text=item['album'],values=['album',item['albumid']],open=True,tags=('unfinished','album'))
             if item['artist']:
                 self.tree.insert(item['album'],'end',text=item['artist'],values=['artist',item['artistid']],open=True,tags=('artist','unfinished'))
-
+                self.item_count += 1
             if item['songs']:
                 for song in item['songs']:
                     self.tree.insert(item['album'],'end',text=song['song'],values=['song',song['songid']],open=True,tags=(str(self.state),'unfinished'))
                     self.state = not self.state
+                    self.item_count += 1
                 self.state = True
 
+        if self.item_count <= 50:
+            self.tree.config(height=self.item_count)
+        else:
+            self.tree.config(height=50)
 
         self.tree.tag_configure('True',background='slategray2')
         self.tree.tag_configure('album',background='skyblue3')
         self.tree.tag_configure('artist',background='skyblue2')
         self.tree.tag_configure('False',background='slategray1')
-        self.tree.tag_configure('finished',background='green')
+        self.tree.tag_configure('finished_album',background='springgreen3')
+        self.tree.tag_configure('finished_artist',background='springgreen2')
+        self.tree.tag_configure('finished_song_odd',background='springgreen')
+        self.tree.tag_configure('finished_song_even',background='palegreen')
 
+        self.button_frame = ttk.LabelFrame(self.main_window,width=600)
+
+        self.go_button = ttk.Button(self.button_frame, text="Go",command=self.like_thread)
+        self.spacer_text = ttk.Label(self.button_frame,text="\t\t\t\t\t\t\t\t\t\t")
+
+        self.progress_bar = ttk.Progressbar(self.button_frame,orient='horizontal',mode='determinate',length=510)
+
+        self.button_frame.pack()
+        self.progress_bar.grid(row=0,column=0)
+        self.go_button.grid(row=0,column=1,sticky='e')
+
+
+    def like_thread(self):
+        self.go_button['state'] ='disabled'
+        self.go_button['text'] = 'Wait'
+        self.like_all()
+        self.progress_bar['value'] = 100
+        self.go_button['text'] = 'Done'
+
+    def like_all(self):
+
+        for item in self.tree.get_children():
+            child = self.tree.item(item)
+            self.like_item('album',child['values'][1])
+            print(child['values'])
+            odd = True
+            for grand_child in self.tree.get_children(item):
+                gc_items = self.tree.item(grand_child)['values']
+                self.like_item(gc_items[0],gc_items[1])
+
+
+
+    def like_item(self,type, item_id):
+        if type == 'album':
+            self.sp.current_user_saved_albums_add([item_id])
+        elif type == 'song':
+            self.sp.current_user_saved_tracks_add([item_id])
+        elif type == 'artist':
+            self.sp.user_follow_artists([item_id])
 
 
     def set_file_details(self,album_details):
@@ -380,7 +432,6 @@ class main_window:
                  if len(match) != 0:
                     self.big_matches_list.append([match,album])
 
-            self.ok_button.config(state='active')
             self.load_button.config(state='disabled')
 
             self.index = 0
@@ -389,18 +440,18 @@ class main_window:
 
             self.match_view.selection_set("0")
             self.onSelect(self)
+            kill_window()
 
 
 
         self.loading_window = tk.Tk()
+        self.loading_window.geometry('+%d+%d'%(self.main_window.winfo_x(),self.main_window.winfo_y()))
         #self.main_window.wm_attributes("-disabled",True)
         self.loading_label = tk.Label(self.loading_window,text="Press the button to gather data from music folder and query spotify API\nPlease be patient, this can take a while")
         self.load_button = ttk.Button(self.loading_window,text="Load",command=real_load_folders)
-        self.ok_button = ttk.Button(self.loading_window,text="Okay",state='disabled',command=kill_window)
 
         self.loading_label.pack()
         self.load_button.pack()
-        self.ok_button.pack()
 
 
 
