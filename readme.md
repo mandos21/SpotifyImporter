@@ -1,7 +1,6 @@
 # Spotify Importer
 
 ![](Screenshots/main_menu.png)
-![](Screenshots/save_screen.png)
 
 Spotify Importer is a python application designed to help automate the process of adding local music files to your Liked Songs, Albums, and Artists on Spotify.
 ## Installation
