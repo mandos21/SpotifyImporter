@@ -29,7 +29,7 @@ The expected structure of your files is a music folder with subdirectories conta
 Example Structure Might Look like this:
 ```
 D:\EXAMPLE DIRECTORY
-├───(1950) OK Computer
+├───(1997) OK Computer
 │       01 - Airbag.flac
 │       02 - Paranoid Android.flac
 │       03 - Subterranean Homesick Alien.flac
